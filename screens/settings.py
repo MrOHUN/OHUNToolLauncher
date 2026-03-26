@@ -1,12 +1,21 @@
+import os
+import json
+import threading
+import shutil
+
 from kivy.uix.screenmanager import Screen
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.label import Label
-from kivy.uix.textinput import TextInput
+from kivy.uix.popup import Popup
+from kivy.clock import Clock
 from kivy.graphics import Color, RoundedRectangle
 
 from utils.widgets import RoundedButton, NavBar
-from utils.helpers import load_settings, save_settings, TOOLS_DIR
+from utils.helpers import TOOLS_DIR
+
+TOOLS_LIST_URL = "https://raw.githubusercontent.com/MrOHUN/OHUNToolLauncher/master/tools/tools_list.json"
+TOOL_BASE_URL = "https://api.github.com/repos/MrOHUN/OHUNToolLauncher/contents/tools/{}"
 
 
 class SettingsScreen(Screen):
@@ -16,7 +25,6 @@ class SettingsScreen(Screen):
 
     def _build(self):
         root = BoxLayout(orientation="vertical")
-        s = load_settings()
 
         # HEADER
         header = BoxLayout(size_hint=(1, None), height=56, padding=[20, 8])
@@ -36,58 +44,30 @@ class SettingsScreen(Screen):
         header.add_widget(title)
 
         # CONTENT
-        scroll = ScrollView(size_hint=(1, 1))
         content = BoxLayout(
             orientation="vertical", size_hint=(1, None),
-            padding=[18, 18], spacing=20
+            height=120, padding=[18, 16], spacing=16
         )
-        content.bind(minimum_height=content.setter("height"))
 
-        # Tools papka yo'li
-        content.add_widget(self._section_label("Tools papkasi yo'li"))
-        self.tools_dir_input = TextInput(
-            text=s.get("tools_dir", ""),
-            hint_text=f"bo'sh = standart ({TOOLS_DIR})",
-            multiline=False, font_size=13,
-            background_color=(0.18, 0.18, 0.22, 1),
-            foreground_color=(1, 1, 1, 1),
-            cursor_color=(0.2, 0.6, 1, 1),
-            size_hint=(1, None), height=44
+        self.status_lbl = Label(
+            text="", font_size=13,
+            color=(0.5, 0.8, 0.5, 1),
+            size_hint=(1, None), height=30,
+            halign="center", valign="middle",
+            markup=True
         )
-        content.add_widget(self.tools_dir_input)
+        self.status_lbl.bind(size=self.status_lbl.setter("text_size"))
 
-        # Grid ustunlar soni
-        content.add_widget(self._section_label("Tool tugmalar — ustun soni"))
-        cols_row = BoxLayout(size_hint=(1, None), height=48, spacing=10)
-        self.cols_btns = {}
-        for c in [1, 2, 3]:
-            btn = RoundedButton(
-                bg_color=(0.2, 0.6, 1, 1) if s.get("cols", 2) == c else (0.22, 0.22, 0.28, 1),
-                text=str(c), font_size=16,
-                size_hint=(1, 1), color=(1, 1, 1, 1)
-            )
-            btn.bind(on_press=lambda x, val=c: self._set_cols(val))
-            self.cols_btns[c] = btn
-            cols_row.add_widget(btn)
-        content.add_widget(cols_row)
-
-        # Saqlash tugmasi
-        content.add_widget(Label(size_hint=(1, None), height=10))
-        save_btn = RoundedButton(
-            bg_color=(0.15, 0.5, 0.3, 1), text="Saqlash",
-            font_size=16, size_hint=(1, None), height=50, color=(1, 1, 1, 1)
+        install_btn = RoundedButton(
+            bg_color=(0.1, 0.45, 0.25, 1),
+            text="GitHub dan tool yukla",
+            font_size=16, size_hint=(1, None), height=56,
+            color=(1, 1, 1, 1)
         )
-        save_btn.bind(on_press=self._save)
-        content.add_widget(save_btn)
+        install_btn.bind(on_press=self._install_tool)
 
-        self._status_lbl = Label(
-            text="", font_size=13, color=(0.4, 0.9, 0.5, 1),
-            size_hint=(1, None), height=30, halign="center"
-        )
-        self._status_lbl.bind(size=self._status_lbl.setter("text_size"))
-        content.add_widget(self._status_lbl)
-
-        scroll.add_widget(content)
+        content.add_widget(install_btn)
+        content.add_widget(self.status_lbl)
 
         # NAVBAR
         navbar = NavBar(
@@ -98,33 +78,110 @@ class SettingsScreen(Screen):
         )
 
         root.add_widget(header)
-        root.add_widget(scroll)
+        root.add_widget(content)
         root.add_widget(navbar)
         self.add_widget(root)
 
-        self._cols_val = s.get("cols", 2)
+    def _install_tool(self, *args):
+        self.status_lbl.text = "[color=888888]Yuklanmoqda...[/color]"
+        threading.Thread(target=self._fetch_tools_list, daemon=True).start()
 
-    def _section_label(self, text):
-        lbl = Label(
-            text=text, font_size=14, color=(0.5, 0.7, 1, 1),
-            halign="left", valign="middle",
-            size_hint=(1, None), height=30
+    def _fetch_tools_list(self):
+        try:
+            import requests
+            r = requests.get(TOOLS_LIST_URL, timeout=10)
+            tools = r.json()
+            Clock.schedule_once(lambda dt: self._show_tools_popup(tools))
+        except Exception as e:
+            Clock.schedule_once(lambda dt: setattr(
+                self.status_lbl, 'text', f"[color=ff4444]Xato: {e}[/color]"
+            ))
+
+    def _show_tools_popup(self, tools):
+        self.status_lbl.text = ""
+
+        content = BoxLayout(orientation="vertical", spacing=8, padding=[10, 10])
+
+        scroll = ScrollView(size_hint=(1, 1))
+        box = BoxLayout(orientation="vertical", size_hint=(1, None), spacing=8)
+        box.bind(minimum_height=box.setter("height"))
+
+        installed = os.listdir(TOOLS_DIR) if os.path.exists(TOOLS_DIR) else []
+
+        for tool in tools:
+            row = BoxLayout(size_hint=(1, None), height=70, spacing=8)
+
+            info = Label(
+                text=f"[b]{tool['name']}[/b]\n[color=888888][size=12]{tool.get('description', '')}[/size][/color]",
+                markup=True, font_size=14,
+                halign="left", valign="middle",
+                size_hint=(1, 1)
+            )
+            info.bind(size=info.setter("text_size"))
+
+            folder = tool.get("folder", "")
+            if folder in installed:
+                btn = RoundedButton(
+                    bg_color=(0.2, 0.2, 0.2, 1),
+                    text="O'rnatilgan", font_size=12,
+                    size_hint=(None, None), width=110, height=44,
+                    color=(0.5, 0.5, 0.5, 1)
+                )
+            else:
+                btn = RoundedButton(
+                    bg_color=(0.1, 0.45, 0.25, 1),
+                    text="O'rnatish", font_size=12,
+                    size_hint=(None, None), width=110, height=44,
+                    color=(1, 1, 1, 1)
+                )
+                btn.bind(on_press=lambda x, t=tool: self._download_tool(t))
+
+            row.add_widget(info)
+            row.add_widget(btn)
+            box.add_widget(row)
+
+        scroll.add_widget(box)
+        content.add_widget(scroll)
+
+        self._popup = Popup(
+            title="Toollar",
+            content=content,
+            size_hint=(0.95, 0.85),
+            background_color=(0.1, 0.1, 0.12, 1),
+            separator_height=1
         )
-        lbl.bind(size=lbl.setter("text_size"))
-        return lbl
+        self._popup.open()
 
-    def _set_cols(self, val):
-        self._cols_val = val
-        for c, btn in self.cols_btns.items():
-            btn.bg_color = (0.2, 0.6, 1, 1) if c == val else (0.22, 0.22, 0.28, 1)
-            btn._draw()
+    def _download_tool(self, tool):
+        self._popup.dismiss()
+        self.status_lbl.text = f"[color=888888]{tool['name']} yuklanmoqda...[/color]"
+        threading.Thread(target=self._fetch_tool_files, args=(tool,), daemon=True).start()
 
-    def _save(self, *args):
-        s = load_settings()
-        s["tools_dir"] = self.tools_dir_input.text.strip()
-        s["cols"] = self._cols_val
-        save_settings(s)
-        self._status_lbl.text = "Saqlandi!"
+    def _fetch_tool_files(self, tool):
+        try:
+            import requests
+            folder = tool["folder"]
+            url = TOOL_BASE_URL.format(folder)
+            r = requests.get(url, timeout=10)
+            files = r.json()
+
+            tool_dir = os.path.join(TOOLS_DIR, folder)
+            os.makedirs(tool_dir, exist_ok=True)
+
+            for f in files:
+                if f["type"] == "file":
+                    file_r = requests.get(f["download_url"], timeout=10)
+                    with open(os.path.join(tool_dir, f["name"]), "w", encoding="utf-8") as fp:
+                        fp.write(file_r.text)
+
+            Clock.schedule_once(lambda dt: setattr(
+                self.status_lbl, 'text',
+                f"[color=33ff88]{tool['name']} o'rnatildi![/color]"
+            ))
+        except Exception as e:
+            Clock.schedule_once(lambda dt: setattr(
+                self.status_lbl, 'text', f"[color=ff4444]Xato: {e}[/color]"
+            ))
 
     def _go_home(self, *args):
         self.manager.current = "home"
