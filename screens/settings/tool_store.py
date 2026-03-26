@@ -11,14 +11,16 @@ from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 
 from utils.widgets import RoundedButton
-from utils.helpers import TOOLS_DIR
+# Importga t as tr qo'shildi
+from utils.helpers import TOOLS_DIR, t as tr
 
 TOOLS_LIST_URL = "https://raw.githubusercontent.com/MrOHUN/OHUNToolLauncher/master/tools/tools_list.json"
 TOOL_BASE_URL  = "https://api.github.com/repos/MrOHUN/OHUNToolLauncher/contents/tools/{}"
 
 
 def open_tool_store(status_lbl):
-    status_lbl.text = "[color=888888]Yuklanmoqda...[/color]"
+    # 1 — yuklanmoqda tarjimasi
+    status_lbl.text = f"[color=888888]{tr('loading')}[/color]"
     threading.Thread(
         target=_fetch_tools_list,
         args=(status_lbl,),
@@ -57,16 +59,18 @@ def _show_popup(tools, status_lbl):
 
         folder = tool.get("folder", "")
         if folder in installed:
+            # 2 — o'rnatilgan tugmasi tarjimasi
             btn = RoundedButton(
                 bg_color=(0.2, 0.2, 0.2, 1),
-                text="O'rnatilgan", font_size=12,
+                text=tr("installed"), font_size=12,
                 size_hint=(None, None), width=110, height=44,
                 color=(0.5, 0.5, 0.5, 1)
             )
         else:
+            # 3 — o'rnatish tugmasi tarjimasi
             btn = RoundedButton(
                 bg_color=(0.1, 0.45, 0.25, 1),
-                text="O'rnatish", font_size=12,
+                text=tr("install"), font_size=12,
                 size_hint=(None, None), width=110, height=44,
                 color=(1, 1, 1, 1)
             )
@@ -79,8 +83,9 @@ def _show_popup(tools, status_lbl):
     scroll.add_widget(box)
     content.add_widget(scroll)
 
+    # 4 — popup title tarjimasi
     popup = Popup(
-        title="Toollar",
+        title=tr("tools"),
         content=content,
         size_hint=(0.95, 0.85),
         background_color=(0.1, 0.1, 0.12, 1),
@@ -91,7 +96,8 @@ def _show_popup(tools, status_lbl):
 
 def _download_tool(tool, status_lbl, popup):
     popup.dismiss()
-    status_lbl.text = f"[color=888888]{tool['name']} yuklanmoqda...[/color]"
+    # 5 — yuklanmoqda (download) tarjimasi
+    status_lbl.text = f"[color=888888]{tool['name']} {tr('downloading')}[/color]"
     threading.Thread(
         target=_fetch_tool_files,
         args=(tool, status_lbl),
@@ -110,12 +116,14 @@ def _fetch_tool_files(tool, status_lbl):
         for f in files:
             if f["type"] == "file":
                 file_r = requests.get(f["download_url"], timeout=10)
+                # UTF-8 bilan saqlash
                 with open(os.path.join(tool_dir, f["name"]), "w", encoding="utf-8") as fp:
                     fp.write(file_r.text)
 
+        # 6 — o'rnatildi tarjimasi
         Clock.schedule_once(lambda dt: setattr(
             status_lbl, 'text',
-            f"[color=33ff88]{tool['name']} o'rnatildi![/color]"
+            f"[color=33ff88]{tool['name']} {tr('install_done')}[/color]"
         ))
     except Exception as e:
         Clock.schedule_once(lambda dt: setattr(

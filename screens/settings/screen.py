@@ -4,10 +4,12 @@ from kivy.uix.label import Label
 from kivy.graphics import Color, RoundedRectangle
 
 from utils.widgets import RoundedButton, NavBar
-from utils.helpers import load_theme
+# Importga t as tr qo'shildi
+from utils.helpers import load_theme, t as tr
 
 from .tool_store import open_tool_store
 from .theme_store import open_theme_store
+from .lang_store import open_lang_store
 
 
 class SettingsScreen(Screen):
@@ -28,8 +30,10 @@ class SettingsScreen(Screen):
             size=lambda w, v: setattr(self._hrect, 'size', v),
             pos=lambda w, v: setattr(self._hrect, 'pos', v)
         )
+        
+        # 1 — Sarlavha tarjimasi
         title = Label(
-            text="[S] Settings", font_size=t.FONT_SIZE_TITLE, bold=True,
+            text=f"[S] {tr('settings')}", font_size=t.FONT_SIZE_TITLE, bold=True,
             color=t.TEXT_COLOR, halign="left", valign="middle",
             size_hint=(1, 1)
         )
@@ -39,7 +43,7 @@ class SettingsScreen(Screen):
         # CONTENT
         content = BoxLayout(
             orientation="vertical", size_hint=(1, None),
-            height=180, padding=[18, 16], spacing=16
+            height=240, padding=[18, 16], spacing=16
         )
 
         self.status_lbl = Label(
@@ -51,24 +55,36 @@ class SettingsScreen(Screen):
         )
         self.status_lbl.bind(size=self.status_lbl.setter("text_size"))
 
+        # 2 — Tool yuklash tugmasi tarjimasi
         tool_btn = RoundedButton(
             bg_color=t.ACCENT_COLOR,
-            text="GitHub dan tool yukla",
+            text=tr("install_tool"),
             font_size=16, size_hint=(1, None), height=56,
             color=t.TEXT_COLOR
         )
         tool_btn.bind(on_press=lambda x: open_tool_store(self.status_lbl))
 
+        # 3 — Tema tanlash tugmasi tarjimasi
         theme_btn = RoundedButton(
             bg_color=t.ACCENT_COLOR,
-            text="Tema tanlash",
+            text=tr("theme_store"),
             font_size=16, size_hint=(1, None), height=56,
             color=t.TEXT_COLOR
         )
         theme_btn.bind(on_press=lambda x: open_theme_store(self.status_lbl))
 
+        # 4 — Til tanlash tugmasi
+        lang_btn = RoundedButton(
+            bg_color=t.ACCENT_COLOR,
+            text=tr("lang_store"),
+            font_size=16, size_hint=(1, None), height=56,
+            color=t.TEXT_COLOR
+        )
+        lang_btn.bind(on_press=lambda x: open_lang_store(self.status_lbl))
+
         content.add_widget(tool_btn)
         content.add_widget(theme_btn)
+        content.add_widget(lang_btn)
         content.add_widget(self.status_lbl)
 
         # NAVBAR

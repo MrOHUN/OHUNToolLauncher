@@ -1,6 +1,15 @@
+import os
 from kivy.uix.button import Button
 from kivy.uix.boxlayout import BoxLayout
 from kivy.graphics import Color, RoundedRectangle
+
+# Debug va tarjima uchun importlar
+from utils.helpers import t, load_lang, LANGS_DIR
+
+# VAQTINCHA: Debug ma'lumotlarini konsolga chiqarish
+print("LANGS_DIR:", LANGS_DIR)
+load_lang()
+print("home:", t("home"))
 
 
 class RoundedButton(Button):
@@ -34,20 +43,24 @@ class NavBar(BoxLayout):
         active_color  = (0.2, 0.6, 1, 1)
         passive_color = (0.45, 0.45, 0.5, 1)
 
+        # Matnlar t() funksiyasi orqali yuklanadi
         self.btn_home = Button(
-            text="[H]\nHome", font_size=16,
+            text=f"[H]\n{t('home')}", font_size=16,
             color=active_color if active == "home" else passive_color,
-            background_color=(0, 0, 0, 0), background_normal=""
+            background_color=(0, 0, 0, 0), background_normal="",
+            halign="center" 
         )
         self.btn_tools = Button(
-            text="[T]\nTools", font_size=16,
+            text=f"[T]\n{t('tools_nav')}", font_size=16,
             color=active_color if active == "tools" else passive_color,
-            background_color=(0, 0, 0, 0), background_normal=""
+            background_color=(0, 0, 0, 0), background_normal="",
+            halign="center"
         )
         self.btn_settings = Button(
-            text="[S]\nSettings", font_size=16,
+            text=f"[S]\n{t('settings_nav')}", font_size=16,
             color=active_color if active == "settings" else passive_color,
-            background_color=(0, 0, 0, 0), background_normal=""
+            background_color=(0, 0, 0, 0), background_normal="",
+            halign="center"
         )
 
         if on_home:     self.btn_home.bind(on_press=on_home)

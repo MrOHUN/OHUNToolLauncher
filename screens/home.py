@@ -10,8 +10,8 @@ from kivy.uix.label import Label
 from kivy.graphics import Color, RoundedRectangle
 
 from utils.widgets import RoundedButton, NavBar
-# load_theme importga qo'shildi
-from utils.helpers import load_settings, hex_rgb, TOOLS_DIR, load_theme
+# Importga t as tr qo'shildi
+from utils.helpers import load_settings, hex_rgb, TOOLS_DIR, load_theme, t as tr
 
 
 class HomeScreen(Screen):
@@ -29,16 +29,17 @@ class HomeScreen(Screen):
         # HEADER
         header = BoxLayout(size_hint=(1, None), height=56, padding=[20, 8])
         with header.canvas.before:
-            # HEADER_COLOR mavzudan olindi
             Color(*t.HEADER_COLOR)
             self._hrect = RoundedRectangle(size=header.size, pos=header.pos)
         header.bind(
             size=lambda w, v: setattr(self._hrect, 'size', v),
             pos=lambda w, v: setattr(self._hrect, 'pos', v)
         )
+        
+        # 1 — Sarlavha tarjimasi
         title = Label(
-            text="[T] Tool Launcher", font_size=20, bold=True,
-            color=t.TEXT_COLOR,  # TEXT_COLOR mavzudan olindi
+            text=f"[T] {tr('app_name')}", font_size=20, bold=True,
+            color=t.TEXT_COLOR,
             halign="left", valign="middle",
             size_hint=(1, 1)
         )
@@ -76,12 +77,14 @@ class HomeScreen(Screen):
         self.manager.current = "settings"
 
     def _home_view(self):
-        t = load_theme() # Mavzuni ushbu metodda ham yuklaymiz
+        t = load_theme() 
         self.content.clear_widgets()
+        
+        # 2 — Xush kelibsiz matni tarjimasi
         lbl = Label(
-            text="Xush kelibsiz!\n\nQuyida  [T] Tools  tugmasini bosing.",
+            text=tr("welcome_text"),
             font_size=17, 
-            color=t.SUBTEXT_COLOR, # SUBTEXT_COLOR mavzudan olindi
+            color=t.SUBTEXT_COLOR,
             halign="center", valign="middle", size_hint=(1, 1)
         )
         lbl.bind(size=lbl.setter("text_size"))
@@ -95,8 +98,9 @@ class HomeScreen(Screen):
         cols = s.get("cols", 2)
 
         if not tools:
+            # 3 — Tool topilmadi matni tarjimasi
             lbl = Label(
-                text="Hech qanday tool topilmadi.\n\ntools/ papkasiga tool qo'shing.",
+                text=tr("no_tools"),
                 font_size=15, color=(0.5, 0.5, 0.5, 1),
                 halign="center", valign="middle", size_hint=(1, 1)
             )
@@ -169,7 +173,6 @@ class HomeScreen(Screen):
                 mod.open_ui()
                 return
         except Exception as e:
-            # Xatoni OutputScreen da ko'rsat
             out = self.manager.get_screen("output")
             out.load(name, main_path, color_hex)
             out.out_label.text = f"[color=ff4444]XATO (yuklashda):[/color]\n\n{str(e)}"

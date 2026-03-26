@@ -6,12 +6,17 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOOLS_DIR = os.path.join(BASE_DIR, "tools")
 SETTINGS_FILE = os.path.join(BASE_DIR, "settings.json")
 THEMES_DIR = os.path.join(BASE_DIR, "themes")
+LANGS_DIR = os.path.join(BASE_DIR, "langs")
 
 DEFAULT_SETTINGS = {
     "tools_dir": "",
     "cols": 2,
     "theme": "default",
+    "lang": "uz",
 }
+
+# Til keshini saqlash uchun global o'zgaruvchi
+_lang_cache = {}
 
 def load_settings():
     if os.path.exists(SETTINGS_FILE):
@@ -51,3 +56,26 @@ def load_theme():
             return theme
         except Exception:
             return None
+
+def load_lang():
+    global _lang_cache
+    s = load_settings()
+    lang_name = s.get("lang", "uz")
+    lang_file = os.path.join(LANGS_DIR, f"{lang_name}.json")
+    try:
+        with open(lang_file, "r", encoding="utf-8") as f:
+            _lang_cache = json.load(f)
+    except Exception:
+        fallback = os.path.join(LANGS_DIR, "uz.json")
+        try:
+            with open(fallback, "r", encoding="utf-8") as f:
+                _lang_cache = json.load(f)
+        except Exception:
+            _lang_cache = {}
+
+def t(key):
+    global _lang_cache
+    if not _lang_cache:
+        load_lang()
+    # Kalit topilsa tarjima, topilmasa kalitning o'zi qaytadi
+    return _lang_cache.get(key, key)
