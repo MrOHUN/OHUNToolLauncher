@@ -1,0 +1,301 @@
+# 🧠 OHUN TOOL LAUNCHER — BRAIN v0.4.1
+
+---
+
+## LOYIHA NIMA?
+
+Android da ishlaydigan, plugin arxitekturasiga asoslangan tool launcher.
+Termux estetikasi — qora fon, yashil matn, terminal ko'rinish.
+Main hech narsa bilmaydi — faqat ochadi. Tool hamma ishni qiladi.
+Kompyuter shart emas — Pydroid 3 + telefon yetarli.
+
+---
+
+## FAYL STRUKTURASI
+
+```
+OHUN/
+├── main.py                  ← App + ScreenManager, ~20 qator
+├── tool_api.py              ← Launcher ↔ Tool shartnomasi
+├── settings.json            ← avtomatik yaratiladi
+│
+├── utils/
+│   ├── helpers.py           ← load_settings, save_settings, hex_rgb, TOOLS_DIR
+│   └── widgets.py           ← RoundedButton, NavBar
+│
+├── screens/
+│   ├── home.py              ← HomeScreen — tool tugmalari
+│   ├── output.py            ← OutputScreen — print natijalar
+│   └── settings.py          ← SettingsScreen — sozlamalar
+│
+└── tools/
+    └── username_finder/
+        ├── meta.json
+        ├── main.py
+        ├── uf_sites.py
+        ├── uf_checker.py
+        └── uf_ui.py
+```
+
+---
+
+## 4 REPO STRUKTURASI (GitHub)
+
+```
+1. OHUNToolLauncher   ← Launcher mexanizmi (main, screens, utils, tool_api)
+2. OHUN-core-tools    ← Faqat OHUN tomonidan chiqarilgan official toollar 😈
+3. OHUN-community-tools ← Xalq yozgan toollar (review kerak)
+4. OHUN-mains         ← Custom mainlar (dark, hacker, minimal — xalq yozadi)
+```
+
+**Tool Store:** Launcher GitHub dan `tools_list.json` o'qiydi →
+foydalanuvchi ko'radi → "O'rnatish" bosadi → papka tushadi → ishlaydi.
+
+**Main tanlash:** Foydalanuvchi Settings dan xohlagan main ni tanlaydi.
+Xuddi Linux da desktop environment kabi.
+
+---
+
+## ARXITEKTURA QOIDALARI
+
+```
+main.py      →  faqat App + ScreenManager
+tool_api.py  →  launcher ↔ tool shartnomasi
+screens/     →  faqat vizual ekranlar
+utils/       →  ikki+ ekran ishlatadigan umumiy qurollar
+tools/       →  har bir tool mustaqil, hech narsadan xabarsiz
+```
+
+**main.py HECH QACHON:**
+- Tool nima qilishini bilmaydi
+- Tool ichiga kirmaydi
+- Tool uchun kod yozmaydi
+
+**Tool HECH QACHON:**
+- Boshqa tooldan xabar topmaydi
+- main.py ga tegmaydi
+- screens/ ga tegmaydi
+- tool_api.py dan tashqari launcher bilan gaplashmaydi
+
+**utils/ qoidasi:**
+- Ikki+ ekran ishlatadigan narsa → utils/ ga
+- Faqat bitta ekran ishlatadigan narsa → shu ekran faylida qoladi
+
+**Tool hajmi qoidasi:**
+- 200 qatordan kichik → bitta main.py yetarli
+- 200+ qator → bo'lish kerak:
+  - `ui.py`    ← faqat vizual
+  - `logic.py` ← faqat hisob-kitob
+  - `main.py`  ← ikkalasini birlashtiradi
+
+---
+
+## TOOL_API.PY — SHARTNOMA
+
+Tool launcher bilan faqat `tool_api.py` orqali gaplashadi.
+
+```python
+# tool_api.py
+import os
+import json
+
+_launcher_version = "0.4.1"
+_current_tool_path = None
+
+def get_launcher_version():
+    return _launcher_version
+
+def get_tool_dir(tool_main_file):
+    return os.path.dirname(os.path.abspath(tool_main_file))
+
+def get_data_file(tool_main_file, filename):
+    tool_dir = get_tool_dir(tool_main_file)
+    return os.path.join(tool_dir, filename)
+
+def save_tool_data(tool_main_file, filename, data):
+    path = get_data_file(tool_main_file, filename)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+def load_tool_data(tool_main_file, filename, default=None):
+    path = get_data_file(tool_main_file, filename)
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return default
+
+def notify(message):
+    print(f"[OHUN] {message}")
+```
+
+**Tool ishlatishi:**
+```python
+# tools/my_tool/main.py
+import tool_api
+
+def run():
+    data = tool_api.load_tool_data(__file__, "history.json", default=[])
+    data.append("yangi yozuv")
+    tool_api.save_tool_data(__file__, "history.json", data)
+    print("Saqlandi!")
+```
+
+---
+
+## META.JSON FORMATI
+
+```json
+{
+    "name": "Tool nomi",
+    "icon": ">>",
+    "color": "#22cc77",
+    "version": "1.0",
+    "author": "OHUN",
+    "description": "Tool nima qiladi"
+}
+```
+
+---
+
+## TOOL MAIN.PY FORMATI
+
+```python
+def run():
+    # OutputScreen da chiqadigan natija
+    print("natija")
+
+def open_ui():
+    # O'z Kivy popup oynasini ochadi — ixtiyoriy
+    pass
+```
+
+---
+
+## SETTINGS.JSON FORMATI
+
+```json
+{
+    "tools_dir": "",
+    "cols": 2
+}
+```
+
+---
+
+## HOZIRGI EKRANLAR
+
+### HomeScreen (screens/home.py)
+- Header: "[T] Tool Launcher"
+- NavBar: Home / Tools / Settings
+- Home tab: xush kelibsiz matni
+- Tools tab: tools/ papkadan o'qib tugmalar chiqaradi
+- Tool bosilsa: open_ui() bor bo'lsa popup, yo'q bo'lsa OutputScreen
+
+### OutputScreen (screens/output.py)
+- Tool print() natijalarini ko'rsatadi
+- "< Orqaga" — HomeScreen ga qaytadi
+- ">> Qayta" — toolni qayta ishga tushiradi
+- Xato bo'lsa qizil rangda ko'rsatadi
+
+### SettingsScreen (screens/settings.py)
+- Tools papka yo'li (bo'sh = standart)
+- Ustun soni: 1 / 2 / 3
+- Saqlash tugmasi → settings.json ga yozadi
+
+---
+
+## MUAMMOLAR VA YECHIMLARI ✅
+
+| Muammo | Sabab | Yechim |
+|--------|-------|--------|
+| Ekran uzun | Pydroid cheklovi | Shunday qoladi |
+| Emoji ko'rinmaydi | Pydroid font yo'q | >> [T] [H] [S] ishlatiladi |
+| Nav tugma ishlamadi | BoxLayout bosilmaydi | Button ga o'zgartirildi |
+| Tool bosilsa hech narsa | print ekranda ko'rinmaydi | OutputScreen qo'shildi |
+| open_ui() ishlamadi | OutputScreen har doim ochilardi | HomeScreen da avval tekshiriladi |
+| Eski modul ishlardi | importlib cache | sys.modules.pop() qo'shildi |
+| Navbar kichkina | 58px edi | 110px qilindi |
+| main.py 611 qator edi | hamma narsa bir joyda | screens/ va utils/ ga bo'lindi |
+| Username finder soxta natija | status==200 hammaga | Sherlock errorType usuli |
+| URL bosilmadi | webbrowser Android da ishlamaydi | Copy tugmasi + clipboard |
+| Tool crash launcherni yiqitadi | try/except yo'q edi | OutputScreen da xato ko'rsatiladi |
+
+---
+
+## VERSIYALAR
+
+| Versiya | Nima qo'shiladi | Holat |
+|---------|----------------|-------|
+| v0.1 | Asosiy GUI, plugin sistema | ✅ |
+| v0.2 | OutputScreen, open_ui() | ✅ |
+| v0.3 | Navbar 110px, Settings ekrani | ✅ |
+| v0.3.1 | screens/+utils/ bo'lindi, username_finder qayta yozildi | ✅ |
+| v0.4 | tool_api.py shartnoma, Copy tugmasi, debug label | 🔧 |
+| v0.5 | Tool Store — GitHub dan yuklab o'rnatish | 🔜 |
+| v0.6 | Custom main / temalar (OHUN-mains repo) | 🔜 |
+| v1.0 | .apk Buildozer, GitHub Release, Telegram kanal | 🔜 |
+
+---
+
+## KEYINGI BOSQICHLAR
+
+### v0.4 — tool_api.py (HOZIR)
+- `tool_api.py` yozish
+- Tool ichidan launcher bilan xavfsiz gaplashish
+- Tool o'z papkasida ma'lumot saqlash imkoniyati
+
+### v0.5 — Tool Store
+- `tools_list.json` GitHub da turadi
+- Dastur internet dan o'qiydi
+- "O'rnatish" tugmasi — papkani yuklab oladi
+- Official (OHUN-core-tools) va Community (OHUN-community-tools) alohida
+
+### v0.6 — Custom Main
+- OHUN-mains repo
+- Settings dan main tanlash
+- dark_main.py, hacker_main.py, minimal_main.py
+
+### v1.0 — Release
+- Buildozer bilan .apk
+- GitHub Releases
+- Telegram kanal
+- F-Droid (open source do'kon)
+- Reddit: r/privacy, r/opensource
+
+---
+
+## TEXNOLOGIYALAR
+
+| Nima | Nima uchun |
+|------|-----------|
+| Python | asosiy til |
+| Kivy | Android GUI |
+| Pydroid 3 | telefonda ishga tushirish |
+| Buildozer | .apk qilish (v1.0 da) |
+| GitHub | 4 repo, tool store, tarqatish |
+| json | meta + settings + tool data |
+| requests | internet so'rovlari (toollarda) |
+
+---
+
+## BIZNES MODEL
+
+- 100% tekin
+- 100% open source
+- Donate ixtiyoriy — Bitcoin, USDT, Payme
+
+---
+
+## TARQATISH REJASI
+
+- GitHub Releases — .apk fayl
+- Telegram kanal — yangi versiyalar
+- F-Droid — open source do'kon
+- Reddit — r/privacy, r/opensource
+
+---
+
+**Hozir v0.4 — tool_api.py yozilmoqda. Asos mustahkam. Ustiga qurish mumkin.
