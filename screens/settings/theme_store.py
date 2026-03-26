@@ -1,5 +1,4 @@
 import os
-import json
 import threading
 import requests
 
@@ -10,12 +9,10 @@ from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 
 from utils.widgets import RoundedButton
-from utils.helpers import load_settings, save_settings, t as tr
+from utils.helpers import load_settings, save_settings, t as tr, THEMES_DIR
 
 THEMES_LIST_URL = "https://raw.githubusercontent.com/MrOHUN/OHUNToolLauncher/master/themes/themes_list.json"
 THEME_BASE_URL  = "https://api.github.com/repos/MrOHUN/OHUNToolLauncher/contents/themes/{}"
-
-THEMES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "themes")
 
 
 def open_theme_store(status_lbl):
@@ -33,8 +30,9 @@ def _fetch_themes_list(status_lbl):
         themes = r.json()
         Clock.schedule_once(lambda dt: _show_popup(themes, status_lbl))
     except Exception as e:
+        err = str(e)
         Clock.schedule_once(lambda dt: setattr(
-            status_lbl, 'text', f"[color=ff4444]Xato: {e}[/color]"
+            status_lbl, 'text', f"[color=ff4444]Xato: {err}[/color]"
         ))
 
 
@@ -48,7 +46,7 @@ def _show_popup(themes, status_lbl):
     box = BoxLayout(orientation="vertical", size_hint=(1, None), spacing=8)
     box.bind(minimum_height=box.setter("height"))
 
-    # O'rnatilgan temalar — themes/ papkasidagi papkalar
+    # O'rnatilgan temalar — papkalarni qidiradi
     installed = [
         d for d in os.listdir(THEMES_DIR)
         if os.path.isdir(os.path.join(THEMES_DIR, d))
@@ -79,7 +77,7 @@ def _show_popup(themes, status_lbl):
                 size_hint=(None, None), width=110, height=44,
                 color=(1, 1, 1, 1)
             )
-            btn.bind(on_press=lambda x, t=theme: _apply_theme(t, status_lbl, popup))
+            btn.bind(on_press=lambda x, th=theme: _apply_theme(th, status_lbl, popup))
         else:
             btn = RoundedButton(
                 bg_color=(0.2, 0.2, 0.2, 1),
@@ -87,7 +85,7 @@ def _show_popup(themes, status_lbl):
                 size_hint=(None, None), width=110, height=44,
                 color=(1, 1, 1, 1)
             )
-            btn.bind(on_press=lambda x, t=theme: _download_theme(t, status_lbl, popup))
+            btn.bind(on_press=lambda x, th=theme: _download_theme(th, status_lbl, popup))
 
         row.add_widget(info)
         row.add_widget(btn)
@@ -97,7 +95,7 @@ def _show_popup(themes, status_lbl):
     content.add_widget(scroll)
 
     popup = Popup(
-        title=tr("themes"),
+        title=tr("themes") if tr("themes") else "Themes",
         content=content,
         size_hint=(0.95, 0.85),
         background_color=(0.1, 0.1, 0.12, 1),
@@ -143,6 +141,7 @@ def _fetch_theme_files(theme, status_lbl):
             f"[color=33ff88]{theme['name']} {tr('install_done')}[/color]"
         ))
     except Exception as e:
+        err = str(e)
         Clock.schedule_once(lambda dt: setattr(
-            status_lbl, 'text', f"[color=ff4444]Xato: {e}[/color]"
+            status_lbl, 'text', f"[color=ff4444]Xato: {err}[/color]"
         ))

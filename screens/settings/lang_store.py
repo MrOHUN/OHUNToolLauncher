@@ -9,13 +9,10 @@ from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 
 from utils.widgets import RoundedButton
-from utils.helpers import load_settings, save_settings, t as tr, load_lang
+from utils.helpers import load_settings, save_settings, t as tr, load_lang, LANGS_DIR
 
 LANGS_LIST_URL = "https://raw.githubusercontent.com/MrOHUN/OHUNToolLauncher/master/langs/langs_list.json"
 LANG_BASE_URL  = "https://raw.githubusercontent.com/MrOHUN/OHUNToolLauncher/master/langs/{}"
-
-# LANGS_DIR ni helpers'dan olish tavsiya etiladi, lekin bu yerda ham qolishi mumkin
-LANGS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "langs")
 
 
 def open_lang_store(status_lbl):
@@ -33,7 +30,6 @@ def _fetch_langs_list(status_lbl):
         langs = r.json()
         Clock.schedule_once(lambda dt: _show_popup(langs, status_lbl))
     except Exception as e:
-        # Xatoni matnga aylantirib, lokal o'zgaruvchiga saqlaymiz
         err = str(e)
         Clock.schedule_once(lambda dt: setattr(
             status_lbl, 'text', f"[color=ff4444]Xato: {err}[/color]"
@@ -50,13 +46,11 @@ def _show_popup(langs, status_lbl):
     box = BoxLayout(orientation="vertical", size_hint=(1, None), spacing=8)
     box.bind(minimum_height=box.setter("height"))
 
-    # O'rnatilgan tillar
-    installed = []
-    if os.path.exists(LANGS_DIR):
-        installed = [
-            f.replace(".json", "") for f in os.listdir(LANGS_DIR)
-            if f.endswith(".json") and f != "langs_list.json"
-        ]
+    # O'rnatilgan tillar — papkalarni qidiradi
+    installed = [
+        d for d in os.listdir(LANGS_DIR)
+        if os.path.isdir(os.path.join(LANGS_DIR, d))
+    ] if os.path.exists(LANGS_DIR) else []
 
     for lang in langs:
         row = BoxLayout(size_hint=(1, None), height=70, spacing=8)
@@ -133,11 +127,12 @@ def _fetch_lang_file(lang, status_lbl):
     try:
         filename = lang["file"]
         r = requests.get(LANG_BASE_URL.format(filename), timeout=10)
+
         filepath = os.path.join(LANGS_DIR, filename)
-        
-        if not os.path.exists(LANGS_DIR):
-            os.makedirs(LANGS_DIR)
-            
+        folder = os.path.dirname(filepath)
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+
         with open(filepath, "w", encoding="utf-8") as fp:
             fp.write(r.text)
 

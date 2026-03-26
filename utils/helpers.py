@@ -1,6 +1,6 @@
 import os
 import json
-import importlib
+import importlib.util
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOOLS_DIR = os.path.join(BASE_DIR, "tools")
@@ -15,7 +15,6 @@ DEFAULT_SETTINGS = {
     "lang": "uz",
 }
 
-# Til keshini saqlash uchun global o'zgaruvchi
 _lang_cache = {}
 
 def load_settings():
@@ -45,28 +44,31 @@ def hex_rgb(h):
 def load_theme():
     s = load_settings()
     theme_name = s.get("theme", "default")
-    try:
-        # Dinamik ravishda modulni yuklash
-        theme = importlib.import_module(f"themes.{theme_name}")
-        return theme
-    except Exception:
-        # Agar xato bo'lsa, default mavzuni yuklash
-        try:
-            import themes.default as theme
-            return theme
-        except Exception:
+
+    def _load(name):
+        path = os.path.join(THEMES_DIR, name, f"{name}.py")
+        if not os.path.exists(path):
             return None
+        spec = importlib.util.spec_from_file_location(f"theme_{name}", path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
+    theme = _load(theme_name)
+    if theme is None:
+        theme = _load("default")
+    return theme
 
 def load_lang():
     global _lang_cache
     s = load_settings()
     lang_name = s.get("lang", "uz")
-    lang_file = os.path.join(LANGS_DIR, f"{lang_name}.json")
+    lang_file = os.path.join(LANGS_DIR, lang_name, f"{lang_name}.json")
     try:
         with open(lang_file, "r", encoding="utf-8") as f:
             _lang_cache = json.load(f)
     except Exception:
-        fallback = os.path.join(LANGS_DIR, "uz.json")
+        fallback = os.path.join(LANGS_DIR, "uz", "uz.json")
         try:
             with open(fallback, "r", encoding="utf-8") as f:
                 _lang_cache = json.load(f)
@@ -77,5 +79,4 @@ def t(key):
     global _lang_cache
     if not _lang_cache:
         load_lang()
-    # Kalit topilsa tarjima, topilmasa kalitning o'zi qaytadi
     return _lang_cache.get(key, key)
