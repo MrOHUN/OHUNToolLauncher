@@ -1,0 +1,6 @@
+.kivy/
+__pycache__/
+*.pyc
+settings.json
+tools/*/history.json
+brain/
