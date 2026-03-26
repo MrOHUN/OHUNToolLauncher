@@ -1,0 +1,10 @@
+BG_COLOR        = (0.0, 0.05, 0.0, 1)
+HEADER_COLOR    = (0.0, 0.12, 0.05, 1)
+TEXT_COLOR      = (0.0, 1.0, 0.3, 1)
+SUBTEXT_COLOR   = (0.0, 0.7, 0.2, 1)
+ACCENT_COLOR    = (0.0, 0.5, 0.15, 1)
+NAVBAR_COLOR    = (0.0, 0.08, 0.03, 1)
+
+BUTTON_HEIGHT   = 110
+FONT_SIZE_TITLE = 20
+FONT_SIZE_BTN   = 14

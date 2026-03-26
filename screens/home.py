@@ -10,7 +10,8 @@ from kivy.uix.label import Label
 from kivy.graphics import Color, RoundedRectangle
 
 from utils.widgets import RoundedButton, NavBar
-from utils.helpers import load_settings, hex_rgb, TOOLS_DIR
+# load_theme importga qo'shildi
+from utils.helpers import load_settings, hex_rgb, TOOLS_DIR, load_theme
 
 
 class HomeScreen(Screen):
@@ -20,12 +21,16 @@ class HomeScreen(Screen):
         self._build()
 
     def _build(self):
+        # Mavzuni yuklash
+        t = load_theme()
+        
         self._root = BoxLayout(orientation="vertical")
 
         # HEADER
         header = BoxLayout(size_hint=(1, None), height=56, padding=[20, 8])
         with header.canvas.before:
-            Color(0.15, 0.15, 0.17, 1)
+            # HEADER_COLOR mavzudan olindi
+            Color(*t.HEADER_COLOR)
             self._hrect = RoundedRectangle(size=header.size, pos=header.pos)
         header.bind(
             size=lambda w, v: setattr(self._hrect, 'size', v),
@@ -33,7 +38,8 @@ class HomeScreen(Screen):
         )
         title = Label(
             text="[T] Tool Launcher", font_size=20, bold=True,
-            color=(1, 1, 1, 1), halign="left", valign="middle",
+            color=t.TEXT_COLOR,  # TEXT_COLOR mavzudan olindi
+            halign="left", valign="middle",
             size_hint=(1, 1)
         )
         title.bind(size=title.setter("text_size"))
@@ -70,10 +76,12 @@ class HomeScreen(Screen):
         self.manager.current = "settings"
 
     def _home_view(self):
+        t = load_theme() # Mavzuni ushbu metodda ham yuklaymiz
         self.content.clear_widgets()
         lbl = Label(
             text="Xush kelibsiz!\n\nQuyida  [T] Tools  tugmasini bosing.",
-            font_size=17, color=(0.7, 0.7, 0.7, 1),
+            font_size=17, 
+            color=t.SUBTEXT_COLOR, # SUBTEXT_COLOR mavzudan olindi
             halign="center", valign="middle", size_hint=(1, 1)
         )
         lbl.bind(size=lbl.setter("text_size"))
