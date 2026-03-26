@@ -1,13 +1,4 @@
-<!DOCTYPE html>
-
-<html>
-<head>
-  <meta http-equiv="CONTENT-TYPE" content="text/html; charset=UTF-8">
-  <title>Hello, World!</title>
-</head>
-<body>
-  <h1>
-    Hello, World!
-  </h1>
-</body>
-</html>
+[
+  {"name": "O'zbek", "code": "uz", "file": "uz/uz.json", "description": "O'zbek tili", "author": "MrOHUN", "version": "1.0"},
+  {"name": "English", "code": "en", "file": "en/en.json", "description": "English", "author": "MrOHUN", "version": "1.0"}
+]
