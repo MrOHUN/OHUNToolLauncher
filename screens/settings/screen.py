@@ -10,7 +10,8 @@ from utils.helpers import load_theme, t as tr
 from .tool_store import open_tool_store
 from .theme_store import open_theme_store
 from .lang_store import open_lang_store
-from .brain_store import open_brain  # ← Yangi import
+from .brain_store import open_brain
+from .active_tools import open_active_tools  # ← Yangi import
 
 
 class SettingsScreen(Screen):
@@ -89,7 +90,7 @@ class SettingsScreen(Screen):
         )
         lang_btn.bind(on_press=lambda x: open_lang_store(self.status_lbl))
 
-        # Brain Store (Yangi qo'shilgan qism)
+        # Brain Store
         brain_btn = RoundedButton(
             bg_color=t.ACCENT_COLOR,
             text=tr("brain"),
@@ -98,11 +99,21 @@ class SettingsScreen(Screen):
         )
         brain_btn.bind(on_press=lambda x: open_brain())
 
+        # Active Tools (Yangi qo'shilgan tugma)
+        active_btn = RoundedButton(
+            bg_color=t.ACCENT_COLOR,
+            text=tr("active_tools"),
+            font_size=16, size_hint=(1, None), height=56,
+            color=t.TEXT_COLOR
+        )
+        active_btn.bind(on_press=lambda x: open_active_tools())
+
         # Widgetlarni tartib bilan qo'shish
         inner.add_widget(tool_btn)
         inner.add_widget(theme_btn)
         inner.add_widget(lang_btn)
-        inner.add_widget(brain_btn)  # ← Brain tugmasi qo'shildi
+        inner.add_widget(brain_btn)
+        inner.add_widget(active_btn)  # ← Active Tools qo'shildi
         inner.add_widget(self.status_lbl)
         scroll.add_widget(inner)
 

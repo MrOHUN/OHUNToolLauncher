@@ -99,7 +99,6 @@ class HomeScreen(Screen):
         self.content.clear_widgets()
         s = load_settings()
         self._tools_dir = s.get("tools_dir", "").strip() or TOOLS_DIR
-        # Gorizontal cardlar uchun odatda 1 ta ustun yaxshi ko'rinadi
         cols = s.get("cols", 1) 
 
         # Status label
@@ -133,7 +132,6 @@ class HomeScreen(Screen):
         self.content.add_widget(search)
         self.content.add_widget(scroll)
 
-        # tools_list.json dan versiyalarni olish
         self._remote_tools = {}
         threading.Thread(target=self._fetch_remote_list, daemon=True).start()
 
@@ -185,14 +183,12 @@ class HomeScreen(Screen):
         remote_ver = remote.get("version", "0")
         has_update = _ver_gt(remote_ver, local_ver)
 
-        # 1 qator: horizontal
         card = BoxLayout(
             orientation="horizontal",
             size_hint=(1, None), height=52,
             spacing=6
         )
 
-        # [i] tugmasi
         desc = tool.get("description", tr("no_description"))
         i_btn = RoundedButton(
             text="i", bg_color=(0.2, 0.3, 0.4, 1),
@@ -201,7 +197,6 @@ class HomeScreen(Screen):
         )
         i_btn.bind(on_press=lambda x, d=desc, n=name: _show_desc(n, d))
 
-        # Asosiy tugma
         btn = RoundedButton(
             bg_color=(r, g, b, 1),
             text=f"{icon} {name}", font_size=14,
@@ -210,7 +205,6 @@ class HomeScreen(Screen):
         )
         btn.bind(on_press=lambda x: self._open_output(name, main_path, color_hex))
 
-        # [update] yoki [delete]
         if has_update:
             action_btn = RoundedButton(
                 bg_color=(0.5, 0.35, 0.0, 1),
@@ -308,12 +302,21 @@ class HomeScreen(Screen):
         return tools
 
     def _open_output(self, name, main_path, color_hex):
+        from utils import tool_manager
+
+        # Agar tool allaqachon ochiq bo'lsa — oldinga chiqar
+        if tool_manager.is_active(name):
+            tool_manager.focus(name)
+            return
+
         if not os.path.exists(main_path):
             return
+
         try:
+            # Yangi yuklashdan oldin modulni keshdan tozalash
             sys.modules.pop(name, None)
             spec = importlib.util.spec_from_file_location(name, main_path)
-            mod  = importlib.util.module_from_spec(spec)
+            mod = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(mod)
 
             if hasattr(mod, "open_ui"):

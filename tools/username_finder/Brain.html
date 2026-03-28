@@ -1,169 +1,144 @@
-# 🔍 USERNAME FINDER — BRAIN v1.0
+```
+# USERNAME FINDER — BRAIN v1.1
 
 ---
 
 ## NIMA QILADI?
-
-Foydalanuvchi username kiriting → 20 ta saytda tekshiriladi → topilganlar bosiladigan havola sifatida chiqadi → bosish bilan to'g'ridan-to'g'ri o'sha profil ochiladi.
+Username kiriting → 23 ta saytda tekshiriladi → topilganlar Copy tugmali havola sifatida chiqadi → background da ishlaydi.
 
 ---
 
 ## FAYL STRUKTURASI
-
-```
 username_finder/
-├── meta.json       ← Tool Launcher uchun: nom, rang, icon
-├── main.py         ← open_ui() va run() — faqat kirish nuqtasi
-├── uf_sites.py     ← 20 sayt ro'yxati + tekshiruv usullari
-├── uf_checker.py   ← HTTP so'rov + tekshiruv logikasi
-└── uf_ui.py        ← Kivy UI: input, natijalar, tugmalar
-```
+├── meta.json       ← nom, rang, icon, version, author, description
+├── main.py         ← open_ui() + tool_manager integratsiya
+├── uf_sites.py     ← 23 sayt ro'yxati + tekshiruv usullari
+├── uf_checker.py   ← HTTP so'rov + UA rotatsiya + delay
+└── uf_ui.py        ← Kivy UI: [-][title][x], input, natijalar
 
 ---
 
 ## HAR BIR FAYL NIMA QILADI?
 
-### `meta.json`
-Tool Launcher uchun — nom, rang, icon.
-```json
-{
-    "name": "Username Finder",
-    "icon": ">>",
-    "color": "#1a9955"
-}
-```
+### meta.json
+{"name", "icon", "color", "version", "author", "description"}
+
+### main.py
+- tool_manager.is_active() → faol bo'lsa focus, aks holda yangi ochadi
+- content._popup = popup → minimize uchun
+- register(TOOL_NAME, content, popup)
+- on_dismiss ga unregister QO'SHILMAYDI — faqat x tugmada
+
+### uf_sites.py
+23 ta sayt. Har bir sayt:
+- url — so'rov manzili
+- errorType — status_code / message / json_key
+- errorMsg — message tipida qidiriladigan matn
+- checkMode — absent (yo'q=topildi) yoki present (bor=topildi)
+
+errorType turlari:
+| errorType   | Qanday ishlaydi                    |
+|-------------|-----------------------------------|
+| status_code | 200 bo'lsa topildi                |
+| message     | Sahifada matn bor/yo'qligiga qarab|
+| json_key    | JSON da kalit bor/yo'qligiga qarab|
+
+Saytlar:
+| Sayt      | errorType   | Eslatma                          |
+|-----------|-------------|----------------------------------|
+| GitHub    | message     | "Not Found"                      |
+| GitLab    | message     | "Sorry, we can't find"           |
+| Instagram | json_key    | API + x-ig-app-id header         |
+| TikTok    | message     | statusCode:10202                 |
+| Reddit    | json_key    | JSON da "error" kaliti           |
+| Pinterest | message     | "couldn't find" + /_saved/ URL   |
+| Telegram  | message     | tgme_page_description present    |
+| YouTube   | message     | "This channel does not exist"    |
+| SoundCloud| message     | "We can't find that user"        |
+| Twitch    | message     | isLiveBroadcast present          |
+| Steam     | message     | "profile could not be found"     |
+| Medium    | message     | "PageNotFound"                   |
+| Dev.to    | message     | "404 Not Found"                  |
+| Replit    | message     | "not found"                      |
+| Twitter/X | message     | "This account doesn't exist"     |
+| LinkedIn  | message     | "Page not found"                 |
+| Snapchat  | message     | "Sorry, we couldn't find"        |
+| Facebook  | message     | "content is not available"       |
+| Spotify   | json_key    | API endpoint                     |
+| Behance   | message     | "We couldn't find the page"      |
+| Dribbble  | message     | "Whoops, that page is gone."     |
+| HackerNews| message     | "No such user."                  |
+| PyPI      | message     | "Not Found"                      |
+
+### uf_checker.py
+- UA_LIST — 5 ta brauzer, har so'rovda random tanlanadi
+- time.sleep(0.5~1.5) — bot detection oldini olish
+- TIMEOUT — 10 sekund
+- 400+ status code → False
+- headers_extra bo'lsa → qo'shimcha header
+- Xato bo'lsa → False, crash yo'q
+
+### uf_ui.py
+Title qatori: [-] [>> Username Finder] [x]
+- [-] → _minimize() → popup.dismiss(), widget saqlanadi
+- [x] → _close() → tool_manager.close()
+- _searching flag → ikki marta bosishdan himoya
+- _popup referens → main.py dan uzatiladi
+- history.json → tool_api orqali saqlanadi
 
 ---
 
-### `main.py`
-Faqat kirish nuqtasi. Boshqa hech narsa bilmaydi.
-```python
-def open_ui():
-    # uf_ui.py dan UsernameFinderUI ni ochadi
+## TOOL MANAGER INTEGRATSIYA
 
-def run():
-    # OutputScreen uchun oddiy chiqish
-```
+main.py da open_ui():
+1. is_active() → faol bo'lsa focus() → return
+2. UsernameFinderUI() yaratiladi (padding YO'Q)
+3. Popup yaratiladi
+4. content._popup = popup
+5. register(TOOL_NAME, content, popup)
+6. on_dismiss → unregister YO'Q
+7. popup.open()
 
----
+_close():
+  tool_manager.close(TOOL_NAME) → dismiss + unregister
 
-### `uf_sites.py`
-20 ta sayt ro'yxati. Har bir sayt uchun:
-- `url` — qaysi manzilga so'rov yuboriladi
-- `errorType` — qanday tekshiriladi
-- `errorMsg` — nima qidiriladi (message tipida)
-- `checkMode` — `absent` (yo'q bo'lsa topildi) yoki `present` (bor bo'lsa topildi)
-
-**errorType turlari:**
-
-| errorType | Qanday ishlaydi |
-|-----------|----------------|
-| `status_code` | 200 bo'lsa topildi |
-| `message` | Sahifada matn bor/yo'qligiga qarab |
-| `json_key` | JSON da kalit bor/yo'qligiga qarab |
-
-**Saytlar va ularning usullari:**
-
-| Sayt | errorType | Eslatma |
-|------|-----------|---------|
-| GitHub | status_code | 404 aniq |
-| GitLab | status_code | 404 aniq |
-| Instagram | message | "Sorry, this page isn't available" |
-| TikTok | message | statusCode:10202 |
-| Reddit | json_key | JSON da "error" kaliti |
-| Pinterest | message | "Sorry! We couldn't find that page" |
-| Telegram | message | `tgme_page_description` present |
-| YouTube | message | `VisitorData` present |
-| SoundCloud | status_code | 404 aniq |
-| Twitch | message | `isLiveBroadcast` present |
-| Steam | message | "The specified profile could not be found." |
-| Medium | status_code | 404 aniq |
-| Dev.to | status_code | 404 aniq |
-| Replit | status_code | 404 aniq |
-| Keybase | status_code | 404 aniq |
-| Pastebin | message | "Not Found" |
-| Linktree | message | statusCode:404 |
-| Imgur | json_key | API + Authorization header |
-| Flickr | status_code | 404 aniq |
-| Vimeo | status_code | 404 aniq |
-
----
-
-### `uf_checker.py`
-HTTP so'rov yuboradi va natijani qaytaradi.
-
-```python
-def check_site(site, username) → (found: bool, url: str)
-```
-
-**Qoidalar:**
-- `HEADERS` — Windows Chrome kabi ko'rinadi (bot detection o'tish uchun)
-- `TIMEOUT` — 10 sekund
-- 400+ status code → har doim `False`
-- `headers_extra` bo'lsa (Imgur) → qo'shimcha header qo'shiladi
-- Xato bo'lsa → `False` qaytaradi, crash bo'lmaydi
-
----
-
-### `uf_ui.py`
-Kivy UI. Uch qismdan iborat:
-
-**`open_url(url)`** — havola ochish:
-```
-subprocess thread → am start → Android to'g'ri app ni ochadi
-fallback → webbrowser.open()
-```
-- Thread ichida ishlaydi → UI bloklanmaydi
-- `https://` yo'q bo'lsa avtomatik qo'shadi
-
-**`ResultRow`** — har bir sayt uchun qator:
-- Topilmagan → kulrang `[----]` + sayt nomi
-- Topilgan → yashil `[FOUND]` + bosiladigan tugma → `open_url()`
-
-**`UsernameFinderUI`** — asosiy ekran:
-- TextInput → username kirish
-- "Qidirish" tugmasi → `_search()` thread da ishga tushadi
-- Har bir sayt tekshirilgach → `Clock.schedule_once` → `_add_row()` → UI yangilanadi
-- Tugagach → "Tugadi: N ta topildi" chiqadi
+_minimize():
+  self._popup.dismiss() → widget xotirada qoladi
 
 ---
 
 ## ARXITEKTURA QOIDALARI
+uf_sites.py   → faqat ma'lumot
+uf_checker.py → faqat HTTP logikasi
+uf_ui.py      → faqat vizual
+main.py       → faqat ochish + tool_manager
 
-```
-uf_sites.py   →  faqat ma'lumot (SITES ro'yxati)
-uf_checker.py →  faqat HTTP logikasi
-uf_ui.py      →  faqat vizual + open_url
-main.py       →  faqat ochish
-```
-
-**Yangi sayt qo'shish:** faqat `uf_sites.py` ga bir dict qo'shiladi — boshqa hech narsa o'zgarmaydi.
-
-**Yangi errorType qo'shish:** faqat `uf_checker.py` da yangi `elif` — boshqa hech narsa o'zgarmaydi.
+Yangi sayt qo'shish → faqat uf_sites.py ga dict
+Yangi errorType → faqat uf_checker.py da elif
 
 ---
 
-## MUAMMOLAR VA YECHIMLARI ✅
-
+## MUAMMOLAR VA YECHIMLARI
 | Muammo | Sabab | Yechim |
 |--------|-------|--------|
-| Soxta natijalar | status==200 hammaga | Har sayt o'z errorType ga ega |
-| Instagram topilmadi | API endpoint login talab qildi | Oddiy sahifa + message usuli |
-| Telegram bosh sahifa ochildi | webbrowser brauzer ochadi | subprocess `am start` Intent |
-| UI muzlab qoldi | subprocess.run() blokladi | Thread ichida ishlatiladi |
-| Tugma bosilmadi | on_release muammo | on_press qaytarildi |
-| Pinterest soxta | _ngdjsoncallback har doim 200 | Oddiy sahifa + message usuli |
-| Imgur soxta | status_code har doim 200 | API endpoint + json_key |
+| Soxta natijalar | status_code ishonchsiz | message/json_key ga o'tildi |
+| Instagram API | login talab qildi | x-ig-app-id header |
+| Telegram ochilmadi | webbrowser brauzer ochadi | subprocess am start Intent |
+| UI muzladi | subprocess.run() blokladi | Thread ichida |
+| Bot detection | bir UA, tez so'rov | UA rotatsiya + delay |
+| Tool 2 marta ochildi | himoya yo'q | is_active() tekshiruvi |
+| - bosilsa holat yo'qoldi | on_dismiss unregister | on_dismiss olib tashlandi |
+| Padding xatosi | 2 joyda padding | UsernameFinderUI() ga uzatilmaydi |
+| Qidiruv davomida yana bosish | _searching flag yo'q | _start da flag tekshiruvi |
 
 ---
 
-## KEYINGI BOSQICHLAR 🔜
-
-- Medium soxta topiladi — `status_code` o'rniga `message` kerak
-- Saytlar soni ko'paytirish — Twitter/X, LinkedIn, Snapchat
-- Parallel tekshiruv — hozir ketma-ket, `ThreadPoolExecutor` bilan tezlashadi
-- Natijalarni saqlash — `history.json` ga yozish
+## KEYINGI BOSQICHLAR
+- Parallel tekshiruv — ThreadPoolExecutor bilan tezlashadi
+- Natijalarni eksport qilish — history.json to'liq yozish
+- Ko'proq saytlar — Twitter aniq ishlashi, Snapchat tekshiruv
 
 ---
 
-**Hozir v1.0 — asosiy funksiya ishlaydi. 20 sayt, aniq natija, bosiladigan havolalar.**
+**Hozir v1.1 — 23 sayt, UA rotatsiya, tool manager, -, x tugmalar.**
+```

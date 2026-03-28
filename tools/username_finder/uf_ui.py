@@ -102,21 +102,64 @@ class ResultRow(BoxLayout):
 
 class UsernameFinderUI(BoxLayout):
     def __init__(self, **kwargs):
-        super().__init__(orientation="vertical", spacing=6, **kwargs)
+        # Asosiy padding va spacing sozlandi
+        super().__init__(orientation="vertical", spacing=6, padding=[8, 10, 8, 6], **kwargs)
         self._found_count = 0
         self._checked_count = 0
+        self._searching = False
+        self._popup = None
         self._build()
 
     def _build(self):
+        # ── TITLE ROW: Kattalashtirilgan tugmalar bilan ──
+        title_row = BoxLayout(size_hint=(1, None), height=48, spacing=8)
+
+        min_btn = Button(
+            text="-", font_size=20,
+            size_hint=(None, 1), width=48,
+            background_color=(0, 0, 0, 0),
+            background_normal="",
+            color=(0.7, 0.7, 0.7, 1)
+        )
+        with min_btn.canvas.before:
+            Color(0.2, 0.2, 0.2, 1)
+            self._mrect = RoundedRectangle(size=min_btn.size, pos=min_btn.pos, radius=[8])
+        min_btn.bind(
+            size=lambda w, v: setattr(self._mrect, 'size', v),
+            pos=lambda w, v: setattr(self._mrect, 'pos', v)
+        )
+        min_btn.bind(on_press=self._minimize)
+
         title = Label(
             text=">> Username Finder",
             font_size=18, bold=True,
             color=(0.3, 0.9, 0.6, 1),
-            size_hint=(1, None), height=40,
+            size_hint=(1, 1),
             halign="left", valign="middle"
         )
         title.bind(size=title.setter("text_size"))
 
+        close_btn = Button(
+            text="x", font_size=18,
+            size_hint=(None, 1), width=48,
+            background_color=(0, 0, 0, 0),
+            background_normal="",
+            color=(0.9, 0.3, 0.3, 1)
+        )
+        with close_btn.canvas.before:
+            Color(0.25, 0.08, 0.08, 1)
+            self._crect2 = RoundedRectangle(size=close_btn.size, pos=close_btn.pos, radius=[8])
+        close_btn.bind(
+            size=lambda w, v: setattr(self._crect2, 'size', v),
+            pos=lambda w, v: setattr(self._crect2, 'pos', v)
+        )
+        close_btn.bind(on_press=self._close)
+
+        title_row.add_widget(min_btn)
+        title_row.add_widget(title)
+        title_row.add_widget(close_btn)
+
+        # ── INPUT ROW ──
         row = BoxLayout(size_hint=(1, None), height=46, spacing=8)
         self.txt = TextInput(
             hint_text="username...",
@@ -164,6 +207,7 @@ class UsernameFinderUI(BoxLayout):
         row.add_widget(self.clear_btn)
         row.add_widget(self.btn)
 
+        # ── STATUS & DEBUG ──
         self.stat = Label(
             text="", font_size=12,
             color=(0.5, 0.6, 0.5, 1),
@@ -174,15 +218,14 @@ class UsernameFinderUI(BoxLayout):
         self.stat.bind(size=self.stat.setter("text_size"))
 
         self.debug = Label(
-            text="",
-            font_size=11,
-            markup=True,
+            text="", font_size=11, markup=True,
             size_hint=(1, None), height=22,
             halign="left", valign="middle",
             color=(0.7, 0.7, 0.7, 1)
         )
         self.debug.bind(size=self.debug.setter("text_size"))
 
+        # ── RESULTS LIST ──
         self.scroll = ScrollView(size_hint=(1, 1))
         self.box = BoxLayout(
             orientation="vertical",
@@ -201,29 +244,53 @@ class UsernameFinderUI(BoxLayout):
         self.box.add_widget(hint)
         self.scroll.add_widget(self.box)
 
-        self.add_widget(title)
+        # UI qo'shish tartibi
+        self.add_widget(title_row)
         self.add_widget(row)
         self.add_widget(self.stat)
         self.add_widget(self.debug)
         self.add_widget(self.scroll)
+
+    def _minimize(self, *args):
+        # Kuchaytirilgan minimize: avval _popup'ni tekshiradi, keyin parent chaindan qidiradi
+        if hasattr(self, '_popup') and self._popup:
+            self._popup.dismiss()
+        else:
+            p = self.parent
+            while p:
+                if hasattr(p, 'dismiss'):
+                    p.dismiss()
+                    break
+                p = p.parent
+
+    def _close(self, *args):
+        from utils import tool_manager
+        tool_manager.close("Username Finder")
 
     def _clear_input(self, *args):
         self.txt.text = ""
         self.debug.text = ""
 
     def _start(self, *args):
+        if self._searching:
+            return
+        
         username = self.txt.text.strip()
         if not username:
             return
+            
+        self._searching = True
         self.box.clear_widgets()
         self._found_count = 0
         self._checked_count = 0
         self.debug.text = ""
         self.stat.text = f"Qidirilmoqda: {username}  |  0/{len(SITES)}"
         self.btn.text = "..."
+        
         with self.btn.canvas.before:
             Color(0.25, 0.25, 0.25, 1)
             self._brect = RoundedRectangle(size=self.btn.size, pos=self.btn.pos, radius=[12])
+            
         threading.Thread(target=self._search, args=(username,), daemon=True).start()
 
     def _search(self, username):
@@ -253,9 +320,9 @@ class UsernameFinderUI(BoxLayout):
         )
 
     def _done(self):
+        self._searching = False
         username = self.txt.text.strip()
 
-        # tool_api test
         try:
             history = tool_api.load_tool_data(__file__, "history.json", default=[])
             if username and username not in history:
@@ -270,6 +337,7 @@ class UsernameFinderUI(BoxLayout):
         with self.btn.canvas.before:
             Color(0.1, 0.55, 0.3, 1)
             self._brect = RoundedRectangle(size=self.btn.size, pos=self.btn.pos, radius=[12])
+            
         sep = Label(
             text=f"[color=555555]── Tugadi: {self._found_count} ta topildi ──[/color]",
             markup=True, font_size=12,
