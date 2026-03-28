@@ -1,15 +1,16 @@
 from kivy.uix.screenmanager import Screen
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.scrollview import ScrollView
 from kivy.uix.label import Label
 from kivy.graphics import Color, RoundedRectangle
 
 from utils.widgets import RoundedButton, NavBar
-# Importga t as tr qo'shildi
 from utils.helpers import load_theme, t as tr
 
 from .tool_store import open_tool_store
 from .theme_store import open_theme_store
 from .lang_store import open_lang_store
+from .brain_store import open_brain  # ← Yangi import
 
 
 class SettingsScreen(Screen):
@@ -30,8 +31,7 @@ class SettingsScreen(Screen):
             size=lambda w, v: setattr(self._hrect, 'size', v),
             pos=lambda w, v: setattr(self._hrect, 'pos', v)
         )
-        
-        # 1 — Sarlavha tarjimasi
+
         title = Label(
             text=f"[S] {tr('settings')}", font_size=t.FONT_SIZE_TITLE, bold=True,
             color=t.TEXT_COLOR, halign="left", valign="middle",
@@ -40,12 +40,7 @@ class SettingsScreen(Screen):
         title.bind(size=title.setter("text_size"))
         header.add_widget(title)
 
-        # CONTENT
-        content = BoxLayout(
-            orientation="vertical", size_hint=(1, None),
-            height=240, padding=[18, 16], spacing=16
-        )
-
+        # STATUS
         self.status_lbl = Label(
             text="", font_size=13,
             color=t.SUBTEXT_COLOR,
@@ -55,7 +50,19 @@ class SettingsScreen(Screen):
         )
         self.status_lbl.bind(size=self.status_lbl.setter("text_size"))
 
-        # 2 — Tool yuklash tugmasi tarjimasi
+        # SCROLL CONTENT
+        scroll = ScrollView(size_hint=(1, 1))
+        inner = BoxLayout(
+            orientation="vertical",
+            size_hint=(1, None),
+            padding=[18, 16],
+            spacing=16
+        )
+        inner.bind(minimum_height=inner.setter("height"))
+
+        # --- Tugmalar ---
+        
+        # Tool Store
         tool_btn = RoundedButton(
             bg_color=t.ACCENT_COLOR,
             text=tr("install_tool"),
@@ -64,7 +71,7 @@ class SettingsScreen(Screen):
         )
         tool_btn.bind(on_press=lambda x: open_tool_store(self.status_lbl))
 
-        # 3 — Tema tanlash tugmasi tarjimasi
+        # Theme Store
         theme_btn = RoundedButton(
             bg_color=t.ACCENT_COLOR,
             text=tr("theme_store"),
@@ -73,7 +80,7 @@ class SettingsScreen(Screen):
         )
         theme_btn.bind(on_press=lambda x: open_theme_store(self.status_lbl))
 
-        # 4 — Til tanlash tugmasi
+        # Lang Store
         lang_btn = RoundedButton(
             bg_color=t.ACCENT_COLOR,
             text=tr("lang_store"),
@@ -82,10 +89,22 @@ class SettingsScreen(Screen):
         )
         lang_btn.bind(on_press=lambda x: open_lang_store(self.status_lbl))
 
-        content.add_widget(tool_btn)
-        content.add_widget(theme_btn)
-        content.add_widget(lang_btn)
-        content.add_widget(self.status_lbl)
+        # Brain Store (Yangi qo'shilgan qism)
+        brain_btn = RoundedButton(
+            bg_color=t.ACCENT_COLOR,
+            text=tr("brain"),
+            font_size=16, size_hint=(1, None), height=56,
+            color=t.TEXT_COLOR
+        )
+        brain_btn.bind(on_press=lambda x: open_brain())
+
+        # Widgetlarni tartib bilan qo'shish
+        inner.add_widget(tool_btn)
+        inner.add_widget(theme_btn)
+        inner.add_widget(lang_btn)
+        inner.add_widget(brain_btn)  # ← Brain tugmasi qo'shildi
+        inner.add_widget(self.status_lbl)
+        scroll.add_widget(inner)
 
         # NAVBAR
         navbar = NavBar(
@@ -96,7 +115,7 @@ class SettingsScreen(Screen):
         )
 
         root.add_widget(header)
-        root.add_widget(content)
+        root.add_widget(scroll)
         root.add_widget(navbar)
         self.add_widget(root)
 

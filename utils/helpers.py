@@ -2,6 +2,7 @@ import os
 import json
 import importlib.util
 
+# Yo'llarni aniqlash
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOOLS_DIR = os.path.join(BASE_DIR, "tools")
 SETTINGS_FILE = os.path.join(BASE_DIR, "settings.json")
@@ -15,9 +16,11 @@ DEFAULT_SETTINGS = {
     "lang": "uz",
 }
 
+# Til keshini saqlash uchun global o'zgaruvchi
 _lang_cache = {}
 
 def load_settings():
+    """settings.json faylini yuklaydi yoki standart sozlamalarni qaytaradi."""
     if os.path.exists(SETTINGS_FILE):
         try:
             with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
@@ -30,10 +33,12 @@ def load_settings():
     return dict(DEFAULT_SETTINGS)
 
 def save_settings(s):
+    """Berilgan sozlamalarni settings.json fayliga saqlaydi."""
     with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
         json.dump(s, f, ensure_ascii=False, indent=2)
 
 def hex_rgb(h):
+    """Hex formatidagi rangni (#ffffff) Kivy uchun RGB formatiga o'tkazadi."""
     h = h.lstrip("#")
     return (
         int(h[0:2], 16) / 255,
@@ -42,6 +47,7 @@ def hex_rgb(h):
     )
 
 def load_theme():
+    """Tanlangan temani (.py fayl) dinamik ravishda yuklaydi."""
     s = load_settings()
     theme_name = s.get("theme", "default")
 
@@ -60,6 +66,7 @@ def load_theme():
     return theme
 
 def load_lang():
+    """Tanlangan tilni (.json fayl) o'qiydi va keshga saqlaydi."""
     global _lang_cache
     s = load_settings()
     lang_name = s.get("lang", "uz")
@@ -76,7 +83,20 @@ def load_lang():
             _lang_cache = {}
 
 def t(key):
+    """Berilgan kalit so'zga mos tarjimani qaytaradi."""
     global _lang_cache
     if not _lang_cache:
         load_lang()
     return _lang_cache.get(key, key)
+
+# --- Yangi qo'shilgan funksiya ---
+
+def clear_cache():
+    """
+    Til keshini tozalaydi. 
+    Bu funksiya chaqirilgandan so'ng t() funksiyasi ishlatilsa, 
+    u yangilangan sozlamalar bo'yicha tillarni qaytadan yuklaydi.
+    """
+    global _lang_cache
+    _lang_cache = {}
+

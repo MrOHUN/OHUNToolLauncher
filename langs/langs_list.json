@@ -1,4 +1,4 @@
 [
   {"name": "O'zbek", "code": "uz", "file": "uz/uz.json", "description": "O'zbek tili", "author": "MrOHUN", "version": "1.0"},
-  {"name": "English", "code": "en", "file": "en/en.json", "description": "English", "author": "MrOHUN", "version": "1.0"}
+  {"name": "English", "code": "en", "file": "en/en.json", "description": "English", "author": "MrOHUN", "version": "0.5"}
 ]

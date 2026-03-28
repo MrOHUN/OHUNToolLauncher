@@ -1,5 +1,8 @@
 {
     "name": "Username Finder",
     "icon": ">>",
-    "color": "#1a9955"
+    "color": "#1a9955",
+    "version": "1.0",
+    "description": "Usernameni barcha saytlarda qidiradi",
+    "author": "MrOHUN"
 }
