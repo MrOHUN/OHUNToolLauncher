@@ -1,0 +1,126 @@
+**SSH BRUTE — BRAIN v1.0:**
+
+```
+# SSH BRUTE — BRAIN v1.0
+
+## NIMA QILADI?
+SSH serverga wordlist orqali parol topadi.
+Parol topilganda "TOPILDI" yashil rangda ko'rsatadi.
+O'quv va penetration testing maqsadida — faqat ruxsat berilgan serverlarda.
+
+## FAYL STRUKTURASI
+ssh_brute/
+├── meta.json          ← nom, rang, icon, version, author, description
+├── main.py            ← open_ui() + tool_manager integratsiya
+├── sb_core.py         ← SSHBruteEngine, paramiko + ThreadPoolExecutor
+├── sb_ui.py           ← asosiy UI, input, natijalar, eksport
+└── wordlists/
+    └── common_pass.txt ← keng tarqalgan parollar ro'yxati
+
+## HAR BIR FAYL NIMA QILADI?
+
+### meta.json
+{"name": "SSH Brute", "icon": "[S]", "color": "#00FF88",
+ "version": "1.0", "author": "MrOHUN",
+ "description": "SSH serverga parol topadi"}
+
+### main.py
+- is_active() → focus() → return
+- SSHBruteUI() yaratiladi
+- content._popup = popup
+- register(TOOL_NAME, content, popup)
+- on_dismiss → unregister YO'Q
+- sys.path da _DIR va _BASE (OHUN/) bo'lishi kerak
+
+### sb_core.py
+- HAS_PARAMIKO → paramiko mavjudmi tekshiradi
+- paramiko yo'q → mock rejim (random success)
+- SSHBruteEngine(on_result, on_found, on_done, threads=10)
+- start(host, port, username, wordlist) → threading.Thread daemon=True
+- stop() → _stop = True → loop to'xtaydi
+- _run() → ThreadPoolExecutor + as_completed
+- parol topilsa → _stop = True → on_found() chaqiriladi
+- _try(host, port, username, password):
+  → paramiko.SSHClient()
+  → AutoAddPolicy — host key tekshirilmaydi
+  → connect() timeout=5
+  → AuthenticationException → xato
+  → boshqa xato → None qaytaradi
+
+### sb_ui.py
+- sys.path ga _DIR va _BASE qo'shiladi
+- SSHBruteUI:
+  - title bar: [-][>> SSH Brute][x]
+  - Host input
+  - Port input (default 22) + Username input (default root)
+  - Threads input (default 10, max 20)
+  - [START/STOP] tugmasi — toggle
+  - ProgressBar + "Sinaldi: N" label
+  - TOPILDI label — yashil, katta
+  - ScrollView → har urinish log (xato=kulrang, topildi=yashil)
+  - [Eksport] → clipboard
+- _running flag → takroriy bosishdan himoya
+- _on_result() → @mainthread
+- _on_found() → @mainthread, TOPILDI label yangilanadi
+- _on_done() → @mainthread, tugma holati tiklanadi
+
+### wordlists/common_pass.txt
+- 40+ keng tarqalgan parollar
+- 123456, password, admin, root, toor...
+- Foydalanuvchi o'zi qo'shishi mumkin
+
+## UI KO'RINISH
+[-]    >> SSH Brute    [x]
+Host: [127.0.0.1__________________]
+Port: [22]   User: [root__________]
+Threads: [10]   (SSH uchun 10 yetarli)
+[████████  START  ████████]
+Progress: ████░░░░        Sinaldi: 18
+
+TOPILDI: u0_a358:root
+
+u0_a358:postgres  [xato]
+u0_a358:ansible   [xato]
+...
+u0_a358:root      [TOPILDI!]
+
+[Eksport]
+
+## REJIMLAR
+- paramiko bor → haqiqiy SSH ulanish ✅
+- paramiko yo'q → mock rejim (UI test) ✅
+
+## WORDLIST KUCHI
+- Kichik (40 ta) → asosiy parollar
+- rockyou.txt (14M) → real hayot parollar
+- O'zbek nomlar → sardor123, toshkent, uzbek...
+- Tug'ilgan yillar → 1990-2010
+
+## MUAMMOLAR VA YECHIMLARI
+| Muammo | Yechim |
+|--------|--------|
+| paramiko yo'q | HAS_PARAMIKO flag → mock rejim |
+| Host kiritilmasa | Tekshiruv + xato popup |
+| Thread soni noto'g'ri | try/except → default 10 |
+| UI thread xatosi | @mainthread decorator |
+| Host key xatosi | AutoAddPolicy ishlatildi |
+
+## VERSIYALAR
+| Versiya | Nima | Holat |
+|---------|------|-------|
+| v1.0 | SSHBruteEngine, UI, log, eksport, mock rejim | ✅ |
+| v2.0 | Parol topilganda avtomatik SSH ulanish + buyruqlar | 🔜 |
+| v3.0 | fail2ban bypass, delay sozlash, proxy support | 🔜 |
+
+## KEYINGI BOSQICHLAR
+- v2.0: Parol topilganda avtomatik SSH ulanish:
+  → whoami, uname -a, ifconfig, ls
+  → Natijalar UI da ko'rsatish
+- v3.0: fail2ban bypass — urinishlar orasida delay
+- Wordlist store — GitHub dan yuklab olish
+- rockyou.txt integratsiya
+- O'zbek parollar ro'yxati qo'shish
+- Multi-username — bir vaqtda bir nechta user sinash
+```
+
+Endi `tools_list.json` ga qo'shib push qilamizmi?
