@@ -1,8 +1,8 @@
 BG_COLOR        = (0.0, 0.05, 0.0, 1)
 HEADER_COLOR    = (0.0, 0.12, 0.05, 1)
-TEXT_COLOR      = (0.0, 1.0, 0.3, 1)
-SUBTEXT_COLOR   = (0.0, 0.7, 0.2, 1)
-ACCENT_COLOR    = (0.0, 0.5, 0.15, 1)
+TEXT_COLOR      = (1.0, 1.0, 1.0, 1)      # oq — har joyda ko'rinadi
+SUBTEXT_COLOR   = (0.0, 0.9, 0.25, 1)     # yashil — subtext
+ACCENT_COLOR    = (0.0, 0.8, 0.2, 1)      # yorqin yashil — tugmalar
 NAVBAR_COLOR    = (0.0, 0.08, 0.03, 1)
 
 BUTTON_HEIGHT   = 110
