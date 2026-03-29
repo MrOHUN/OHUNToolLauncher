@@ -5,5 +5,26 @@
     "description": "Usernameni barcha saytlarda qidiradi",
     "version": "1.0",
     "author": "MrOHUN"
+  },
+  {
+    "name": "Web Fuzzer",
+    "folder": "web_fuzzer",
+    "description": "Veb-saytning yashirin sahifalarini topadi",
+    "version": "1.0",
+    "author": "MrOHUN"
+  },
+  {
+    "name": "Host Scanner",
+    "folder": "host_scanner",
+    "description": "Tarmoqdagi faol qurilmalarni aniqlaydi va portlarini skanerlaydi",
+    "version": "1.0",
+    "author": "MrOHUN"
+  },
+  {
+    "name": "Net Sniffer",
+    "folder": "net_sniffer",
+    "description": "Faol tarmoq ulanishlarini ko'rsatadi",
+    "version": "1.0",
+    "author": "MrOHUN"
   }
 ]
