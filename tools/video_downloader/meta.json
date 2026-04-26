@@ -1,0 +1,8 @@
+{
+    "name": "Video Downloader",
+    "icon": "⬇",
+    "color": "#1565C0",
+    "version": "1.0",
+    "author": "OHUN",
+    "description": "Video va fayllarni URL orqali yuklab oladi"
+}

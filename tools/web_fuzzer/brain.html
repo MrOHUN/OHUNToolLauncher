@@ -1,0 +1,107 @@
+WEB FUZZER — BRAIN v1.0:
+# WEB FUZZER — BRAIN v1.0
+
+## NIMA QILADI?
+Veb-saytning yashirin sahifalarini wordlist orqali topadi.
+Har bir yo'lni HTTP so'rov bilan tekshiradi va status code qaytaradi.
+O'quv va penetration testing maqsadida — faqat ruxsat berilgan saytlarda.
+
+## FAYL STRUKTURASI
+web_fuzzer/
+├── meta.json        ← nom, rang, icon, version, author, description
+├── main.py          ← open_ui() + tool_manager integratsiya
+├── wf_core.py       ← FuzzerEngine, requests + ThreadPoolExecutor
+├── wf_ui.py         ← asosiy UI, input, natijalar, eksport
+└── wordlists/
+    └── common.txt   ← tekshiriladigan yo'llar ro'yxati
+
+## HAR BIR FAYL NIMA QILADI?
+
+### meta.json
+{"name": "Web Fuzzer", "icon": "[W]", "color": "#FF6B35",
+ "version": "1.0", "author": "OHUN",
+ "description": "Veb-saytning yashirin sahifalarini topadi"}
+
+### main.py
+- is_active() → focus() → return
+- WebFuzzerUI() yaratiladi
+- content._popup = popup
+- register(TOOL_NAME, content, popup)
+- on_dismiss → unregister YO'Q
+- sys.path da _DIR va _BASE (OHUN/) bo'lishi kerak
+
+### wf_core.py
+- HAS_REQUESTS → requests mavjudmi tekshiradi
+- requests yo'q → mock rejim (random status code)
+- FuzzerEngine(on_result, on_done, threads=50)
+- start(url, wordlist) → threading.Thread daemon=True
+- stop() → _stop = True → loop to'xtaydi
+- _run() → ThreadPoolExecutor + as_completed
+- _check(base_url, path) → requests.get timeout=5
+  → {"url", "path", "status", "size"} qaytaradi
+  → xato bo'lsa None qaytaradi
+
+### wf_ui.py
+- sys.path ga _DIR va _BASE qo'shiladi
+- STATUS_COLORS: 200→yashil, 301→ko'k, 403→sariq, 500→qizil
+- ResultCard(result) — har natija kartochkasi (height=44):
+  - [status] + path + hajm(kb) + [i] tugmasi
+  - [i] → batafsil popup: URL, status, hajm
+- WebFuzzerUI:
+  - title bar: [-][>> Web Fuzzer][x]
+  - URL input (http/https tekshiruvi)
+  - Threads input (1-100, default 50)
+  - Filter input (200,301,403 — vergul bilan)
+  - [START/STOP] tugmasi — toggle
+  - ProgressBar + "Topildi: N" label
+  - ScrollView → ResultCard lar
+  - [Eksport] → clipboard
+  - [Tozalash] → natijalarni tozalaydi
+- _fuzzing flag → takroriy bosishdan himoya
+- _on_result() → @mainthread, filter tekshiruvi
+- _on_done() → @mainthread, tugma holati tiklanadi
+
+### wordlists/common.txt
+- 50+ keng tarqalgan veb yo'llar
+- admin, login, backup, config, api, uploads...
+- Foydalanuvchi o'zi qo'shishi mumkin
+
+## UI KO'RINISH
+[-]    >> Web Fuzzer    [x]
+URL: [http://localhost:8080______]
+Threads: [50]  Filter: [200,301,403]
+[████████  START  ████████]
+Progress: ████████ 100%    Topildi: 4
+
+[301] backup                0.0kb [i]
+[301] api                   0.0kb [i]
+[301] admin                 0.0kb [i]
+[200] index.html            0.0kb [i]
+
+[Eksport]              [Tozalash]
+
+## REJIMLAR
+- requests bor → haqiqiy HTTP so'rovlar ✅
+- requests yo'q → mock rejim (UI test) ✅
+
+## MUAMMOLAR VA YECHIMLARI
+| Muammo | Yechim |
+|--------|--------|
+| URL http siz kiritilsa | Tekshiruv + xato popup |
+| Thread soni noto'g'ri | try/except → default 50 |
+| requests yo'q | HAS_REQUESTS flag → mock rejim |
+| UI thread xatosi | @mainthread decorator |
+| Filter noto'g'ri format | try/except → default [200,301,403] |
+| Lambda capture xatosi | err = str(e) pattern |
+
+## VERSIYALAR
+| Versiya | Nima | Holat |
+|---------|------|-------|
+| v1.0 | FuzzerEngine, UI, filter, eksport, mock rejim | ✅ |
+| v2.0 | Custom wordlist yuklash, response preview, timeout sozlash | 🔜 |
+
+## KEYINGI BOSQICHLAR
+- Custom wordlist — foydalanuvchi o'z faylini yuklaydi
+- Response preview — [i] da sahifa mazmunini ko'rsatish
+- Timeout sozlash — UI dan o'zgartirish
+- Wordlist store — GitHub dan wordlist yuklab olish
