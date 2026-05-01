@@ -27,6 +27,14 @@
     "version": "1.0",
     "author": "MrOHUN"
   },
+{
+    "name": "Video Downloader",
+    "icon": "⬇",
+    "color": "#1565C0",
+    "version": "1.0",
+    "author": "OHUN",
+    "description": "Video va fayllarni URL orqali yuklab oladi"
+},
   {
     "name": "SSH Brute",
     "folder": "ssh_brute",
